@@ -9,13 +9,23 @@ createMktDeposit(amount a,recipient r, unique_visitors v, period p){
 	//if after p days the goal is not met, the funds are returned to the company.
 }
 
+requestPayout(website){
+	marketing agency can request payout --> this call triggers SC to ask Chainlink Oracle for data. GAE endpoint is called, if hit, payout. if not - nothing
+}
+
+requestPayback(website){
+	client can request payback --> if period did not pass --> nothing.
+	--> if period passed: call triggers SC to ask Chainlink Oracle for data. GAE endpoint is called, if below threshold, payback.
+}
+
 postWebsiteTraffic(visitors v,){
 	//if v on t is > threshold, payout.
 }
 
 data ingested RT into BQ.
 --> # visitors only based on campagin --> UTM tag
-to mimic days, every minut a scheduled Q is run to calculate the # visitors on page.
+
+--
 
 future work:
 expand logic to increase of i% sustained over multiple days.
