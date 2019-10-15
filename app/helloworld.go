@@ -39,7 +39,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	num := getNumVisitors()
 
-	fmt.Fprint(w, "There were %d visitors",num)
+	fmt.Fprint(w,num)
 }
 
 type Visitors struct {
@@ -55,8 +55,8 @@ func getNumVisitors() int64{
     }
     query := client.Query(
     	`SELECT
-    	COUNT(1) as visitors
-        FROM ` + "`bigquery-public-data.stackoverflow.posts_questions`" + `;`)
+    	COUNT(DISTINCT fullVisitorId) as visitors
+        FROM ` + "`bigquery-public-data.google_analytics_sample.ga_sessions_*`;")
      iter, read_error := query.Read(ctx)
      if read_error != nil {
      	log.Fatal(err)
@@ -71,7 +71,7 @@ func getNumVisitors() int64{
         	log.Fatal(iterError)
         	return -1
         }
-        fmt.Print("unique visitors: %d\n",row.Visitors)
+        fmt.Print("unique visitors: %d\n", row.Visitors)
         return row.Visitors
     }
 }
