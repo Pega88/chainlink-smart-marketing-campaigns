@@ -19,3 +19,7 @@ to mimic days, every minut a scheduled Q is run to calculate the # visitors on p
 
 future work:
 expand logic to increase of i% sustained over multiple days.
+
+
+frevent marketing agency from curling --> store backend-generated userId for logged in users.
+These metrics are known as daily-, weekly-, and monthly-active users and are frequently used by web analytics and mobile app analytics professionals to assess website and app and success.
