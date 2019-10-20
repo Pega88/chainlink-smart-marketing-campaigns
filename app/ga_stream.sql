@@ -1,4 +1,4 @@
--- View created to avoid having to expose all PII data publically to be able to run hackathon results
+-- View created to avoid having to expose all PII data publicly to be able to run hackathon results
 CREATE OR REPLACE VIEW `chainlink-marketing-roi.ga_export.ga_stream` AS
 SELECT
   clientId,
