@@ -3,69 +3,6 @@ pragma solidity 0.4.24;
 import "https://github.com/smartcontractkit/chainlink/evm/contracts/ChainlinkClient.sol";
 import "https://github.com/smartcontractkit/chainlink/evm/contracts/vendor/Ownable.sol";
 
-contract ATestnetConsumer is ChainlinkClient, Ownable {
-    uint256 constant private ORACLE_PAYMENT = 1 * LINK;
-
-    uint256 public currentPrice;
-    int256 public changeDay;
-    bytes32 public lastMarket;
-
-    event RequestEthereumPriceFulfilled(
-        bytes32 indexed requestId,
-        uint256 indexed price
-    );
-
-
-    constructor() public Ownable() {
-        setPublicChainlinkToken();
-    }
-
-    function requestEthereumPrice(address _oracle, string _jobId)
-    public
-    onlyOwner
-    {
-        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(_jobId), this, this.fulfillEthereumPrice.selector);
-        req.add("get", "https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD");
-        req.add("path", "USD");
-        req.addInt("times", 100);
-        sendChainlinkRequestTo(_oracle, req, ORACLE_PAYMENT);
-    }
-
-    function requestEthereumChange(address _oracle, string _jobId)
-    public
-    onlyOwner
-    {
-        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(_jobId), this, this.fulfillEthereumChange.selector);
-        req.add("get", "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD");
-        req.add("path", "RAW.ETH.USD.CHANGEPCTDAY");
-        req.addInt("times", 1000000000);
-        sendChainlinkRequestTo(_oracle, req, ORACLE_PAYMENT);
-    }
-
-    function requestEthereumLastMarket(address _oracle, string _jobId)
-    public
-    onlyOwner
-    {
-        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(_jobId), this, this.fulfillEthereumLastMarket.selector);
-        req.add("get", "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD");
-        string[] memory path = new string[](4);
-        path[0] = "RAW";
-        path[1] = "ETH";
-        path[2] = "USD";
-        path[3] = "LASTMARKET";
-        req.addStringArray("path", path);
-        sendChainlinkRequestTo(_oracle, req, ORACLE_PAYMENT);
-    }
-
-    function fulfillEthereumPrice(bytes32 _requestId, uint256 _price)
-    public
-    recordChainlinkFulfillment(_requestId)
-    {
-        emit RequestEthereumPriceFulfilled(_requestId, _price);
-        currentPrice = _price;
-    }
-
-}
 
 /**
 * Contract will payout marketing agency once agreed upon threshold for unique visitors is reached.
@@ -77,15 +14,16 @@ contract MarketingROI is ChainlinkClient, Ownable {
 
     //ROPSTEN VALUES
     address constant private CHAINLINK_ORACLE = 0xc99B3D447826532722E41bc36e644ba3479E4365;
-    byte32 constant private HTTP_GET_INT_JOB_ID = "46a7c3f9852e46e09350ad5af92ce86f";
-    byte32 constant private HTTP_GET_UINT_JOB_ID = "3cff0a3524694ff8834bda9cf9c779a1";
-    byte32 constant private HTTP_GET_BYTE32_JOB_ID = "76ca51361e4e444f8a9b18ae350a5725";
+    string constant private HTTP_GET_INT_JOB_ID = "46a7c3f9852e46e09350ad5af92ce86f";
+    string constant private HTTP_GET_UINT_JOB_ID = "3cff0a3524694ff8834bda9cf9c779a1";
+    string constant private HTTP_GET_BYTE32_JOB_ID = "76ca51361e4e444f8a9b18ae350a5725";
 
 
     event RequestGetVisitorsFullfilled(
         bytes32 indexed requestId,
-        uint256 indexed visitors
-    );
+        uint256 indexed visitors);
+
+    uint256 public uniqueVisitors;
 
     constructor() public Ownable(){
         setPublicChainlinkToken();
@@ -94,20 +32,17 @@ contract MarketingROI is ChainlinkClient, Ownable {
 
     function checkVisitors() public returns (bytes32 requestId) {
         // newRequest takes a JobID, a callback address, and callback function as input
-        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(HTTP_GET_UINT_JOB_ID), this, this.fulfillEthereumPrice.selector);
+        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(HTTP_GET_UINT_JOB_ID), this, this.fulfillUniqueVisitors.selector);
         req.add("get", APPENGINE_ENDPOINT);
         req.add("path", "uniqueVisitors");
-        // Adds an integer with the key "times" to the request parameters
         req.addInt("times", 1);
         // Sends the request with 1 LINK to the oracle contract
         requestId = sendChainlinkRequest(req, ORACLE_PAYMENT);
     }
 
-
-    // fulfillEthereumPrice receives a uint256 data type
-    function fulfillEthereumPrice(bytes32 _requestId, uint256 _price) public recordChainlinkFulfillment(_requestId) {
-        price = _price;
-        emit gotResponse(price);
+    function fulfillUniqueVisitors(bytes32 _requestId, uint256 _uniqueVisitors) public recordChainlinkFulfillment(_requestId) {
+        uniqueVisitors = _uniqueVisitors;
+        emit RequestGetVisitorsFullfilled(_requestId, _uniqueVisitors);
     }
 
     /**
