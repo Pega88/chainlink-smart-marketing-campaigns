@@ -10,7 +10,7 @@ import "https://github.com/smartcontractkit/chainlink/evm/contracts/vendor/Ownab
 **/
 contract MarketingROI is ChainlinkClient, Ownable {
     uint256 constant private ORACLE_PAYMENT = 1 * LINK;
-    string constant APPENGINE_ENDPOINT = "https://chainlink-marketing-roi.appspot.com";
+    string constant APPENGINE_ENDPOINT = "https://chainlink-marketing-roi.appspot.com/?campaignId=";
 
     //ROPSTEN VALUES
     address constant private CHAINLINK_ORACLE = 0xc99B3D447826532722E41bc36e644ba3479E4365;
@@ -18,31 +18,61 @@ contract MarketingROI is ChainlinkClient, Ownable {
     string constant private HTTP_GET_UINT_JOB_ID = "3cff0a3524694ff8834bda9cf9c779a1";
     string constant private HTTP_GET_BYTE32_JOB_ID = "76ca51361e4e444f8a9b18ae350a5725";
 
+    //todo better to have struct be max 256 bits?
+    struct Campaign {
+        string campaignId;
+        uint256 amount;
+        uint256 visitorsRequired;
+        address agency;
+    }
 
-    event RequestGetVisitorsFullfilled(
+
+    event RequestCampaignPayoutFullfilled(
         bytes32 indexed requestId,
         uint256 indexed visitors);
 
     uint256 public uniqueVisitors;
+
+    //maps campaignId to campaign details
+    mapping(string => Campaign) campaigns;
+    //maps the payout request id to the campaign it was requested for
+    mapping(bytes32 => string) payoutRequests;
 
     constructor() public Ownable(){
         setPublicChainlinkToken();
         setChainlinkOracle(CHAINLINK_ORACLE);
     }
 
-    function checkVisitors() public returns (bytes32 requestId) {
-        // newRequest takes a JobID, a callback address, and callback function as input
-        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(HTTP_GET_UINT_JOB_ID), this, this.fulfillUniqueVisitors.selector);
-        req.add("get", APPENGINE_ENDPOINT);
-        req.add("path", "uniqueVisitors");
-        req.addInt("times", 1);
-        // Sends the request with 1 LINK to the oracle contract
-        requestId = sendChainlinkRequest(req, ORACLE_PAYMENT);
+
+    function registerCampaign(string _campaignId, uint256 _visitorsRequired, address _agency) public payable {
+        assert(bytes(_campaignId).length > 0);
+        assert(_visitorsRequired > 0);
+        //register the amount to be paid to the campaign id.
+        campaigns[_campaignId] = Campaign(_campaignId, msg.value, _visitorsRequired, _agency);
     }
 
-    function fulfillUniqueVisitors(bytes32 _requestId, uint256 _uniqueVisitors) public recordChainlinkFulfillment(_requestId) {
+    function requestCampaignPayout(string campaignId) public returns (bytes32 requestId) {
+        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(HTTP_GET_UINT_JOB_ID), this, this.fulfillCampaignPayout.selector);
+        req.add("get", append(APPENGINE_ENDPOINT,campaignId));
+        req.add("path", "uniqueVisitors");
+        req.addInt("times", 1);
+        requestId = sendChainlinkRequest(req, ORACLE_PAYMENT);
+
+        //persist the fact that this request was made for the given campaignId so fulfillment knows what campaign to validate.
+        payoutRequests[requestId] = campaignId;
+    }
+
+    function fulfillCampaignPayout(bytes32 _requestId, uint256 _uniqueVisitors) public recordChainlinkFulfillment(_requestId) {
         uniqueVisitors = _uniqueVisitors;
-        emit RequestGetVisitorsFullfilled(_requestId, _uniqueVisitors);
+        string storage campaignId = payoutRequests[_requestId];
+        Campaign storage c = campaigns[campaignId];
+
+        //check if threshold has been reached
+        if (_uniqueVisitors >= c.visitorsRequired) {
+            //send money to agency
+            c.agency.transfer(c.amount);
+        }
+        emit RequestCampaignPayoutFullfilled(_requestId, _uniqueVisitors);
     }
 
     /**
@@ -74,5 +104,10 @@ contract MarketingROI is ChainlinkClient, Ownable {
         assembly {// solhint-disable-line no-inline-assembly
             result := mload(add(source, 32))
         }
+    }
+    function append(string a, string b) internal pure returns (string) {
+
+        return string(abi.encodePacked(a, b));
+
     }
 }
