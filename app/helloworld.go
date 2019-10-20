@@ -55,9 +55,14 @@ func getNumVisitors() int64{
         os.Exit(1)
     }
     query := client.Query(
-    	`SELECT
-    	COUNT(DISTINCT fullVisitorId) as visitors
-        FROM ` + "`bigquery-public-data.google_analytics_sample.ga_sessions_*`;")
+    	"
+    	SELECT
+    	COUNT(DISTINCT fullVisitorId) AS visitors
+    	FROM
+    	`nessie-dev-030719-111015.fourcast.ua1258111401_stream`
+    	WHERE
+    	trafficSource.source = 'chainlink_campaign'
+    	")
      iter, read_error := query.Read(ctx)
      if read_error != nil {
      	log.Fatal(err)
