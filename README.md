@@ -23,6 +23,7 @@ postWebsiteTraffic(visitors v,){
 }
 
 #trigger new hit: incognito @ https://www.fourcast.io/?utm_source=chainlink_campaign
+#endpoint: https://chainlink-marketing-roi.appspot.com/
 
 data ingested RT into BQ.
 --> # visitors only based on campagin --> UTM tag
