@@ -22,6 +22,8 @@ postWebsiteTraffic(visitors v,){
 	//if v on t is > threshold, payout.
 }
 
+#trigger new hit: incognito @ https://www.fourcast.io/?utm_source=chainlink_campaign
+
 data ingested RT into BQ.
 --> # visitors only based on campagin --> UTM tag
 
