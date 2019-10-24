@@ -1,2 +1,3 @@
 .idea
-truffle-test/exports.sh
+truffle-test/exports.shbuild
+truffle-test/build
