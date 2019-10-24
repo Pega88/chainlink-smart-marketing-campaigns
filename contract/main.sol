@@ -172,6 +172,7 @@ contract MarketingROI is ChainlinkClient, Ownable {
     ** Allows the campaign owner to get back the ETH in case deadline for marketing agency exceeded
     **
     ** Param _campaignId the campaign Id for which to request payout for
+    ** Due to requires, txn will fail if conditions not met hence the warnings in Remix. e.g. if not yet expired.
     **
     **/
     function cancelCampaign(string _campaignId) public {
