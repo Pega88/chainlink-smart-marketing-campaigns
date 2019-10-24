@@ -41,16 +41,21 @@ contract MarketingROI is ChainlinkClient, Ownable {
     //maps the payout request id to the campaign it was requested for
     mapping(bytes32 => string) payoutRequests;
 
-    event CampaignThresholdReached(bytes32 indexed requestId, string indexed campaignid, uint256 indexed visitors);
-    event CampaignThresholdNotReached(bytes32 indexed requestId, string indexed campaignid, uint256 indexed visitors);
+    event CampaignThresholdReached(bytes32 requestId, string campaignid, uint256 visitors,uint256 nextVisitorsTarget);
+    event CampaignThresholdNotReached(bytes32 requestId, string campaignid, uint256 visitors,uint256 nextVisitorsTarget);
     event CampaignRegistered(string campaignId,uint256 amount,uint256 visitors,uint256 payoutChunkSize,uint numPayouts);
-
+    event PrintValues(uint256 uniqueVisitors,uint256 visitorsRequired,uint256 amount, uint256 payoutSize);
+    event PaymentMade(address payee,uint256 value);
 
     constructor() public Ownable(){
         setPublicChainlinkToken();
         setChainlinkOracle(CHAINLINK_ORACLE);
     }
 
+    //retrieve next target for partial payout
+    function nextTargetForCampaign(string _campaignId) public view returns (uint256){
+        return campaigns[_campaignId].nextVisitorsTarget;
+    }
 
     //retrieve current state for campaign
     function registeredVisitors(string _campaignId) public view returns (uint256){
@@ -64,8 +69,11 @@ contract MarketingROI is ChainlinkClient, Ownable {
     /**
     ** Registers a new campaign
     **
-    ** Param _requestId the chainlink request
-    ** Param _uniqueVisitors the amount of unique visitors on the page according to the oracle
+    ** Param _campaignId the campaign name
+    ** Param _visitorsRequired the amount of unique visitors required to payout the full fee
+    ** Param _visitorsIncrement the amount of unique visitors required to payout each chunk of the fee. Amount of payouts will be _visitorsRequired/_visitorsIncrement and amount per payout will be amount/num payouts.
+    ** Param _agency the address to which the payments are made
+    ** Param _expiry the epoch in seconds when the campaign ends and target should be reached. if not, client can request refund of the outstanding amount
     **
     **/
     function registerCampaign(string _campaignId, uint256 _visitorsRequired, uint256 _visitorsIncrement, address _agency, uint256 _expiry) public payable {
@@ -89,6 +97,7 @@ contract MarketingROI is ChainlinkClient, Ownable {
             );
         emit CampaignRegistered(_campaignId,msg.value,_visitorsRequired,msg.value/numPayoutChunks,numPayoutChunks);
     }
+    
 
 
     /**
@@ -121,8 +130,6 @@ contract MarketingROI is ChainlinkClient, Ownable {
     ** Param _uniqueVisitors the amount of unique visitors on the page according to the oracle
     **
     **/
-    event PrintValues(uint256 uniqueVisitors,uint256 visitorsRequired,uint256 amount, uint256 payoutSize);
-    event PaymentMade(address payee,uint256 value);
     function fulfillCampaignPayout(bytes32 _requestId, uint256 _uniqueVisitors) public recordChainlinkFulfillment(_requestId) {
 
         string storage campaignId = payoutRequests[_requestId];
@@ -137,15 +144,15 @@ contract MarketingROI is ChainlinkClient, Ownable {
             if ( c.amount >= c.payoutSize) {
                 //transfer an increment
                 c.agency.transfer(c.payoutSize);
+                emit PaymentMade(c.agency,c.payoutSize);
                 //deduct outstanding amount
                 c.amount -= c.payoutSize;
                 //set the next target
                 c.nextVisitorsTarget += c.visitorsIncrement;
-                emit PaymentMade(c.agency,c.payoutSize);
             } else {
                 //if lower balance, transfer what's left
                 c.agency.transfer(c.amount);
-                emit PaymentMade(c.agency,c.payoutSize);
+                emit PaymentMade(c.agency,c.amount);
                 //fee fully paid
                 c.amount = 0;
                 //no next target
@@ -154,10 +161,10 @@ contract MarketingROI is ChainlinkClient, Ownable {
             campaigns[c.campaignId] = c;
 
             //log
-            emit CampaignThresholdReached(_requestId, c.campaignId, c.uniqueVisitors);
+            emit CampaignThresholdReached(_requestId, c.campaignId, c.uniqueVisitors,c.nextVisitorsTarget);
         } else {
             //log
-            emit CampaignThresholdNotReached(_requestId, c.campaignId, c.uniqueVisitors);
+            emit CampaignThresholdNotReached(_requestId, c.campaignId, c.uniqueVisitors,c.nextVisitorsTarget);
         }
     }
 
