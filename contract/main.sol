@@ -62,27 +62,27 @@ contract MarketingROI is ChainlinkClient, Ownable {
     /**
     ** Registers a new campaign
     **
-    ** @Param _requestId the chainlink request
-    ** @Param _uniqueVisitors the amount of unique visitors on the page according to the oracle
+    ** Param _requestId the chainlink request
+    ** Param _uniqueVisitors the amount of unique visitors on the page according to the oracle
     **
     **/
     function registerCampaign(string _campaignId, uint256 _visitorsRequired, uint256 _visitorsIncrement, address _agency, uint256 _expiry) public payable {
-        assert(_visitorsRequired.length > 0, "Required visitors not set");
-        assert(_visitorsIncrement.length > 0, "Visitors increment not set");
-        assert(bytes(_campaignId).length > 0, "empty campaignId");
-        assert(bytes(_agency).length > 0, "empty agency address");
-        assert(bytes(campaigns[_campaignId]) == 0, "Campaign already exists"); //prevent overwriting after creation to hack the system
+        require(_visitorsRequired > 0, "Required visitors not set");
+        require(_visitorsIncrement > 0, "Visitors increment not set");
+        require(bytes(_campaignId).length > 0, "empty campaignId");
+        require(_agency != address(0), "empty agency address");
+        require(bytes(campaigns[_campaignId].campaignId).length == 0, "Campaign already exists"); //check that there is no struct yet - prevent overwriting after creation to hack the system
 
-        campaigns[_campaignId] = Campaign(_campaignId, msg.value, _visitorsRequired, _visitorsIncrement, _agency, msg.sender, _expiry);
+        campaigns[_campaignId] = Campaign(_campaignId, msg.value,_visitorsRequired/_visitorsIncrement,_visitorsRequired, _visitorsIncrement,0, _agency, msg.sender, _expiry);
     }
 
 
     /**
     ** Caller creates request for the next partial payout of the given campaign.
     **
-    ** @Param _campaignId the campaign to request next partial payout for
+    ** Param _campaignId the campaign to request next partial payout for
     **
-    ** @Return the requestId for the oracle request
+    ** Return the requestId for the oracle request
     **
     **/
     function requestCampaignPayout(string campaignId) public returns (bytes32 requestId) {
@@ -101,8 +101,8 @@ contract MarketingROI is ChainlinkClient, Ownable {
     ** Callback function for the Oracles when the amount of unique visitors have been retrieved
     ** Rely on recordChainlinkFulfillment Modifier to ensure that the caller and requestId are valid
     **
-    ** @Param _requestId the chainlink request
-    ** @Param _uniqueVisitors the amount of unique visitors on the page according to the oracle
+    ** Param _requestId the chainlink request
+    ** Param _uniqueVisitors the amount of unique visitors on the page according to the oracle
     **
     **/
     function fulfillCampaignPayout(bytes32 _requestId, uint256 _uniqueVisitors) public recordChainlinkFulfillment(_requestId) {
@@ -113,14 +113,14 @@ contract MarketingROI is ChainlinkClient, Ownable {
 
         //check if threshold has been reached
         if (c.uniqueVisitors >= c.visitorsRequired) {
-            assert(c.amount > 0, "Funds fully paid");
-            if (c.amount >= payoutSize) {
+            require(c.amount > 0, "Funds fully paid");
+            if ( c.amount >= c.payoutSize) {
                 //transfer an increment
-                c.agency.transfer(payoutSize);
+                c.agency.transfer(c.payoutSize);
                 //deduct outstanding amount
-                c.amount -= payoutSize;
+                c.amount -= c.payoutSize;
                 //set the next target
-                c.visitorsRequired += c.visitorsRequiredIncrement;
+                c.visitorsRequired += c.visitorsIncrement;
             } else {
                 //if lower balance, transfer what's left
                 c.agency.transfer(c.amount);
@@ -129,31 +129,31 @@ contract MarketingROI is ChainlinkClient, Ownable {
                 //no next target
             }
             //store updates
-            campaigns[_campaignId] = c;
+            campaigns[c.campaignId] = c;
 
             //log
-            emit CampaignThresholdReached(_requestId, _campaignId, _uniqueVisitors);
+            emit CampaignThresholdReached(_requestId, c.campaignId, c.uniqueVisitors);
         } else {
             //log
-            emit CampaignThresholdNotReached(_requestId, _campaignId, _uniqueVisitors);
+            emit CampaignThresholdNotReached(_requestId, c.campaignId, c.uniqueVisitors);
         }
     }
 
     /**
     ** Allows the campaign owner to get back the ETH in case deadline for marketing agency exceeded
     **
-    ** @Param _campaignId the campaign Id for which to request payout for
+    ** Param _campaignId the campaign Id for which to request payout for
     **
     **/
     function cancelCampaign(string _campaignId) public {
-        assert(bytes(_campaignId).length > 0, "empty campaignId");
-        Campaign storage campaign = campaigns[_campaignId];
-        assert(campaign.client == msg.sender, "Payout can only be requested by client");
-        assert(campaign.amount > 0, "Funds fully paid");
-        assert(now > campaign.expiry, "Campaign not expired yet - cannot refund yet");
+        require(bytes(_campaignId).length > 0, "empty campaignId");
+        Campaign storage c = campaigns[_campaignId];
+        require(c.client == msg.sender, "Payout can only be requested by client");
+        require(c.amount > 0, "Funds fully paid");
+        require(now > c.expiry, "Campaign not expired yet - cannot refund yet");
 
         //All conditions validated - marketing agency failed to reach full target - pay back the outstanding amount to the client
-        require(msg.sender.transfer(campaign.amount), "Ether refund failed");
+        msg.sender.transfer(c.amount);
     }
 
     /**
