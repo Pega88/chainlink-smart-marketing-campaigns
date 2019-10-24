@@ -28,6 +28,7 @@ contract MarketingROI is ChainlinkClient, Ownable {
         uint256 payoutSize;
         uint256 visitorsRequired;
         uint256 visitorsIncrement;
+        uint256 nextVisitorsTarget;
         uint256 uniqueVisitors;
         address agency;
         address client;
@@ -42,6 +43,7 @@ contract MarketingROI is ChainlinkClient, Ownable {
 
     event CampaignThresholdReached(bytes32 indexed requestId, string indexed campaignid, uint256 indexed visitors);
     event CampaignThresholdNotReached(bytes32 indexed requestId, string indexed campaignid, uint256 indexed visitors);
+    event CampaignRegistered(string campaignId,uint256 amount,uint256 visitors,uint256 payoutChunkSize,uint numPayouts);
 
 
     constructor() public Ownable(){
@@ -72,8 +74,20 @@ contract MarketingROI is ChainlinkClient, Ownable {
         require(bytes(_campaignId).length > 0, "empty campaignId");
         require(_agency != address(0), "empty agency address");
         require(bytes(campaigns[_campaignId].campaignId).length == 0, "Campaign already exists"); //check that there is no struct yet - prevent overwriting after creation to hack the system
-
-        campaigns[_campaignId] = Campaign(_campaignId, msg.value,_visitorsRequired/_visitorsIncrement,_visitorsRequired, _visitorsIncrement,0, _agency, msg.sender, _expiry);
+        uint256 numPayoutChunks = _visitorsRequired/_visitorsIncrement;
+        campaigns[_campaignId] = Campaign(
+            _campaignId, //the unique Id to be registered.
+            msg.value, //the total amount to be paid
+            msg.value/numPayoutChunks, //the chunk size in which payouts are done when an increment is reached. (e.g. 1 eth total for 100k visits with increment 50k visits, there will be 2 payouts of each 0.5eth)
+            _visitorsRequired, //the total amount of visitors required for the full campaign to be paid
+            _visitorsIncrement, //the increment required for a next payout
+            _visitorsIncrement, //the first target for the payout. starts with the size of the first increment.
+            0, //the amount of initial visitors for the campaign (will be 0 in bigquery when using new UTM tag)
+            _agency, // the agency performing the campaign, that will be paid out.
+            msg.sender, // the client paying for the campaign
+            _expiry //epoch seconds when client can ask refund
+            );
+        emit CampaignRegistered(_campaignId,msg.value,_visitorsRequired,msg.value/numPayoutChunks,numPayoutChunks);
     }
 
 
@@ -95,6 +109,8 @@ contract MarketingROI is ChainlinkClient, Ownable {
 
         //persist the fact that this request was made for the given campaignId so fulfillment knows what campaign to validate.
         payoutRequests[requestId] = campaignId;
+        
+        //TODO emit
     }
 
     /**
@@ -105,14 +121,18 @@ contract MarketingROI is ChainlinkClient, Ownable {
     ** Param _uniqueVisitors the amount of unique visitors on the page according to the oracle
     **
     **/
+    event PrintValues(uint256 uniqueVisitors,uint256 visitorsRequired,uint256 amount, uint256 payoutSize);
+    event PaymentMade(address payee,uint256 value);
     function fulfillCampaignPayout(bytes32 _requestId, uint256 _uniqueVisitors) public recordChainlinkFulfillment(_requestId) {
 
         string storage campaignId = payoutRequests[_requestId];
         Campaign storage c = campaigns[campaignId];
         c.uniqueVisitors = _uniqueVisitors;
+        
+        emit PrintValues(c.uniqueVisitors,c.visitorsRequired,c.amount,c.payoutSize);
 
         //check if threshold has been reached
-        if (c.uniqueVisitors >= c.visitorsRequired) {
+        if (c.uniqueVisitors >= c.nextVisitorsTarget) { 
             require(c.amount > 0, "Funds fully paid");
             if ( c.amount >= c.payoutSize) {
                 //transfer an increment
@@ -120,10 +140,12 @@ contract MarketingROI is ChainlinkClient, Ownable {
                 //deduct outstanding amount
                 c.amount -= c.payoutSize;
                 //set the next target
-                c.visitorsRequired += c.visitorsIncrement;
+                c.nextVisitorsTarget += c.visitorsIncrement;
+                emit PaymentMade(c.agency,c.payoutSize);
             } else {
                 //if lower balance, transfer what's left
                 c.agency.transfer(c.amount);
+                emit PaymentMade(c.agency,c.payoutSize);
                 //fee fully paid
                 c.amount = 0;
                 //no next target
