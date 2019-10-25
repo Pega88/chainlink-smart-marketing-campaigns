@@ -29,7 +29,7 @@ func (cc *CryptoCompare) Opts() *bridges.Opts {
 	return &bridges.Opts{
 		Name:   "CryptoCompare",
 		//Lambda: true, //not needed for GCP
-		Path: "/api", //if not, default behavirou is routing to "/", while CL node trims last slash, so force subpath.
+		//Path: "/api", //if not, default behavirou is routing to "/", while CL node trims last slash, so force subpath.
 	}
 }
 

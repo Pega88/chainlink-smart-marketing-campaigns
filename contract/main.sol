@@ -16,9 +16,11 @@ contract MarketingROI is ChainlinkClient, Ownable {
 
     //ROPSTEN VALUES
     //TODO pass oracle + jobId as param instead of hardcoded
-    address constant private CHAINLINK_ORACLE = 0xc99B3D447826532722E41bc36e644ba3479E4365;
+    //address constant private CHAINLINK_ORACLE = 0xc99B3D447826532722E41bc36e644ba3479E4365;
+    address constant private CHAINLINK_ORACLE = 0x74a3BFaac518281aF8515bdAb1187cDb08B6a7f9; //eigen node
+    string constant private HTTP_GET_UINT_JOB_ID = "de2046986ea849cbadfede87d3eb5add"; // eigen node
     string constant private HTTP_GET_INT_JOB_ID = "46a7c3f9852e46e09350ad5af92ce86f";
-    string constant private HTTP_GET_UINT_JOB_ID = "3cff0a3524694ff8834bda9cf9c779a1";
+    //string constant private HTTP_GET_UINT_JOB_ID = "3cff0a3524694ff8834bda9cf9c779a1";
     string constant private HTTP_GET_BYTE32_JOB_ID = "76ca51361e4e444f8a9b18ae350a5725";
 
     //todo better to have struct be max 256 bits?
@@ -98,8 +100,6 @@ contract MarketingROI is ChainlinkClient, Ownable {
         emit CampaignRegistered(_campaignId,msg.value,_visitorsRequired,msg.value/numPayoutChunks,numPayoutChunks);
     }
     
-
-
     /**
     ** Caller creates request for the next partial payout of the given campaign.
     **
