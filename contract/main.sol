@@ -14,25 +14,37 @@ contract MarketingROI is ChainlinkClient, Ownable {
     uint256 constant private ORACLE_PAYMENT = 1 * LINK;
     string constant APPENGINE_ENDPOINT = "https://chainlink-marketing-roi.appspot.com/?campaignId=";
 
-    //ROPSTEN VALUES
     //TODO pass oracle + jobId as param instead of hardcoded
-    //address constant private CHAINLINK_ORACLE = 0xc99B3D447826532722E41bc36e644ba3479E4365;
-    address constant private CHAINLINK_ORACLE = 0x74a3BFaac518281aF8515bdAb1187cDb08B6a7f9; //eigen node
-    string constant private HTTP_GET_UINT_JOB_ID = "de2046986ea849cbadfede87d3eb5add"; // eigen node
+
+    //ROPSTEN VALUES
+    address constant private CHAINLINK_ORACLE = 0xc99B3D447826532722E41bc36e644ba3479E4365;
     string constant private HTTP_GET_INT_JOB_ID = "46a7c3f9852e46e09350ad5af92ce86f";
-    //string constant private HTTP_GET_UINT_JOB_ID = "3cff0a3524694ff8834bda9cf9c779a1";
+    string constant private HTTP_GET_UINT_JOB_ID = "3cff0a3524694ff8834bda9cf9c779a1";
     string constant private HTTP_GET_BYTE32_JOB_ID = "76ca51361e4e444f8a9b18ae350a5725";
 
-    //todo better to have struct be max 256 bits?
+    //OWN VALUES
+    address constant private OWN_CHAINLINK_ORACLE = 0xf6B0aa89B96fc5CE89225909343183fC2Bf99fb7; //self-hosted node with bigquery adapter
+    string constant private BIQUERY_JOB_ID = "";    
+
+
     struct Campaign {
+        //the unique identified for the campaign
         string campaignId;
+        //the total amount that is reserved for this campaign.
         uint256 amount;
+        //the size of each individual payout in case of partial payouts.
         uint256 payoutSize;
+        //the agreed upon amount of unique visitors as a target for the campaign
         uint256 visitorsRequired;
+        //the amount of visitors required for each partial payout
         uint256 visitorsIncrement;
+        //used for calculation in case of partial payouts
         uint256 nextVisitorsTarget;
+        //the amount of visitors recorded for this campaign. Can be consulted for free through view fucntion.
         uint256 uniqueVisitors;
+        //the agency performing the marketing campaign that is to be paid out of targets are reached
         address agency;
+        //the client who is asking/paying for the campaign
         address client;
         //epoch in seconds of expiry of deadline to reach target - creator can ask refund after this date
         uint256 expiry;
