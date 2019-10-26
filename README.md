@@ -1,38 +1,18 @@
 # Concept
 Marketing agencies have the difficult task of proving their ROI, making it hard for companies to invest in such campaigns. Companies want to be protected from spending money on a marketing campaign that does not deliver, as well as a marketing agency wants to get paid when certain criteria are met. One of these criteria that both parties could agree on, is the amount of new/unique visitors that landed on the website thanks to the marketing campaign (called clickthrough rate). A smart contract has been created that will payout the marketing agency once an agreed upon # unique visitors have visited the website within a timeframe.
 
-Google Analytics data is sent to the SC through chainlink every day (currently every minute to showcase the use case). If the # visitors is reached, the marketing agency gets paid out. If by the deadline the # new visitors has not been reached, the company is returned the funds as the marketing campaign was not successful. This motivated the marketing agency to deliver high quality campaigns, as well as be directly paid when the goal is met.
+Google Analytics data is streamed into Google BigQuery as a native feature of Google Analytics 360. This is data on hit-level (user click) so this dataset is both massive in size as well as it is valuable. The power of Google BigQuery is that it can scan TB or PB of data in just seconds. A SQL query can thus be run on this dataset to query the amount of visitors that reached visited the website. Marketing campaigns use a GET parameter, `utm_source` to attribute the visit to the campaign from where the user clicked through (e.g. Advertisement, email campaign). All hyperlinks for a campaign contain this parameter. Querying for unique visitors while filtering on a specific `utm_source` shows us how many users have visited the site as a consequence of the marketing campaign. This metric is often used to show the ROI (Return on Investment) for a specific marketing campaign and to monitor its success. 
 
-# Pseudo code
-createMktDeposit(amount a,recipient r, unique_visitors v, period p){
-	//payout amount A to R when V visitors have visited the website based on the marketing campaign
-	//if after p days the goal is not met, the funds are returned to the company.
-}
+Thanks to this hackathon submission, actual performance payouts can now be linked to the amount if unique visitors rather than the metric only being used in campaign reporting. Customers that want to hire a marketing agency can register their campaign with this Smart Contract and set the payment terms. Some of these parameters are the amount to be paid, the agency to be paid and the amount of visitors required for a payout to happen. More details can be found in the `contract` section.
 
-requestPayout(website){
-	marketing agency can request payout --> this call triggers SC to ask Chainlink Oracle for data. GAE endpoint is called, if hit, payout. if not - nothing
-}
+If the amount visitors is reached, the marketing agency can request to be paid out. If by the deadline the amount new visitors has not been reached, the company can request the remaining funds to be returned as the marketing campaign was not fully successful.
 
-requestPayback(website){
-	client can request payback --> if period did not pass --> nothing.
-	--> if period passed: call triggers SC to ask Chainlink Oracle for data. GAE endpoint is called, if below threshold, payback.
-}
+This motivated the marketing agency to deliver high quality campaigns, as well as be directly paid when the goal is met. For customers they have more guarantees on success, as well as marketing agencies can really stand out and show their reputation on the blockchain (amount of successful paid out campaigns) rather than the customer having to trust the agency on its word when they claim their campaigns have great ROI.
 
-postWebsiteTraffic(visitors v,){
-	//if v on t is > threshold, payout.
-}
-
-#trigger new hit: incognito @ https://www.fourcast.io/?utm_source=chainlink_campaign
-#endpoint: https://chainlink-marketing-roi.appspot.com/
-
-data ingested RT into BQ.
---> # visitors only based on campagin --> UTM tag
-
---
-
-future work:
-expand logic to increase of i% sustained over multiple days.
+Marketing agencies delivering quality campaigns will therefore thrive, and they will be paid out in accordance with the initial agreements, rather than having to wait months on outstanding invoices for a badly paying customer.
 
 
-frevent marketing agency from curling --> store backend-generated userId for logged in users.
-These metrics are known as daily-, weekly-, and monthly-active users and are frequently used by web analytics and mobile app analytics professionals to assess website and app and success.
+#Future work
+Currently the Custom Adapter is linked to my own BigQuery dataset for the website of my company (https://fourcast.io), because that's the Google Analytics and BigQuery data I had access to. When put into production, every customer will have its own BigQuery datasets which should be reflected in the Bridge and Smart Contract.
+
+At this moment I deployed the Google Cloud Function that serves as the Custom Adapter on the same Google Cloud Project as where the BigQuery dataset resides. The result is that the default Service Account used by Cloud Functions has the rights to read the dataset (as it's not public). Other nodes deploying this bridge should communicate their Google Cloud Platform Service Account which needs to be given access to read data from the same BigQuery dataset.
