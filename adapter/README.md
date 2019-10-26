@@ -12,3 +12,14 @@ or
 
 ## Usage
 `curl -d {} -H "Content-Type: application/json" -X POST https://us-central1-chainlink-marketing-roi.cloudfunctions.net/bq-bridge`
+
+`curl -X POST https://us-central1-chainlink-marketing-roi.cloudfunctions.net/bq-bridge \
+-H 'Content-Type: application/json' \
+-d @- << EOF
+{
+	"jobId": "1234",
+	"data": {
+		"campaignId": "chainlink_campaign"
+	}
+}
+EOF`

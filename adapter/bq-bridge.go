@@ -13,7 +13,11 @@ type BigQueryVisitors struct{}
 
 // Run is the bridge.Bridge Run implementation that returns the price response
 func (cc *BigQueryVisitors) Run(h *bridges.Helper) (interface{}, error) {
-	visitors, err := getNumUniqueVisitors(h.GetParam("campaignId"))
+	log.Print("before running")
+	campaignId := h.GetParam("campaignId")
+	log.Print("campaignId from request:",campaignId)
+	visitors, err := getNumUniqueVisitors(campaignId)
+	log.Print("returned vistors to bridge Run: ",visitors)
 	r := map[string]interface{}{"uniqueVitors": visitors}
 	return r, err
 }
@@ -42,14 +46,12 @@ func getNumUniqueVisitors(campaignId string) (int64, error) {
 	}
 	query := client.Query(
 		`
-    	SELECT
-    	COUNT(DISTINCT fullVisitorId) AS visitors
-    	FROM` +
-			"`chainlink-marketing-roi.ga_export.ga_stream`" +
+    	SELECT COUNT(DISTINCT fullVisitorId) AS visitors FROM ` +
+			"`chainlink-marketing-roi.ga_export.ga_stream` " +
 			`WHERE
-    	trafficsource_source =` +
+    	trafficsource_source ="` +
 			campaignId +
-			`;`)
+			`";`)
 
 	iter, read_error := query.Read(ctx)
 	if read_error != nil {
