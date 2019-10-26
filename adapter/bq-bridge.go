@@ -67,7 +67,7 @@ func getNumUniqueVisitors(campaignId string) (int64, error) {
 			log.Fatal(iterError)
 			return -1, iterError
 		}
-		log.Print("unique visitors: %d", row.Visitors)
+		log.Print("unique visitors:", row.Visitors)
 		return row.Visitors, nil
 	}
 }

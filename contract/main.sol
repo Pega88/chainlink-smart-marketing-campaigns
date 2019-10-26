@@ -12,19 +12,10 @@ import "https://github.com/smartcontractkit/chainlink/evm/contracts/vendor/Ownab
 //TODO multiple oracles --> https://github.com/smartcontractkit/chainlink/blob/master/evm/contracts/Aggregator.sol
 contract MarketingROI is ChainlinkClient, Ownable {
     uint256 constant private ORACLE_PAYMENT = 1 * LINK;
-    //string constant APPENGINE_ENDPOINT = "https://chainlink-marketing-roi.appspot.com/?campaignId=";
-
-    //TODO pass oracle + jobId as param instead of hardcoded
-
-    //ROPSTEN VALUES
-    address constant private CHAINLINK_ORACLE = 0xc99B3D447826532722E41bc36e644ba3479E4365;
-    string constant private HTTP_GET_INT_JOB_ID = "46a7c3f9852e46e09350ad5af92ce86f";
-    string constant private HTTP_GET_UINT_JOB_ID = "3cff0a3524694ff8834bda9cf9c779a1";
-    string constant private HTTP_GET_BYTE32_JOB_ID = "76ca51361e4e444f8a9b18ae350a5725";
 
     //OWN VALUES
-    address constant private OWN_CHAINLINK_ORACLE = 0xf6B0aa89B96fc5CE89225909343183fC2Bf99fb7; //self-hosted node with bigquery adapter
-    string constant private BIQUERY_JOB_ID = "";    
+    address constant private OWN_CHAINLINK_ORACLE = 0x65d1d8f064326ce10ae3ffb57454a48a4e8cba7f; //self-hosted node with bigquery adapter
+    string constant private BIQUERY_JOB_ID = "a1582b32d6434bde9111f22e87ed86ec";
 
 
     struct Campaign {
@@ -61,9 +52,12 @@ contract MarketingROI is ChainlinkClient, Ownable {
     event PrintValues(uint256 uniqueVisitors,uint256 visitorsRequired,uint256 amount, uint256 payoutSize);
     event PaymentMade(address payee,uint256 value);
 
+    // Since using my own adapter I hardcode my own oracle here. When setup for production, oracles should be dynamic and result should be aggregated.
+    // however in the interest of time, having a flow working end to end (bigquery - custom adapter - own node - own oracle - smart contract interaction) was preferred over running
+    // a default httpGet jobid on multiple nodes.
     constructor() public Ownable(){
         setPublicChainlinkToken();
-        setChainlinkOracle(CHAINLINK_ORACLE);
+        setChainlinkOracle(OWN_CHAINLINK_ORACLE);
     }
 
     //retrieve next target for partial payout
@@ -89,6 +83,7 @@ contract MarketingROI is ChainlinkClient, Ownable {
     ** Param _agency the address to which the payments are made
     ** Param _expiry the epoch in seconds when the campaign ends and target should be reached. if not, client can request refund of the outstanding amount
     **
+    ** Payable ensures the client can deposit ether that will be paid out to the agency when the _visitorsRequired target is hit. 
     **/
     function registerCampaign(string _campaignId, uint256 _visitorsRequired, uint256 _visitorsIncrement, address _agency, uint256 _expiry) public payable {
         require(_visitorsRequired > 0, "Required visitors not set");
@@ -121,21 +116,21 @@ contract MarketingROI is ChainlinkClient, Ownable {
     **
     **/
     function requestCampaignPayout(string campaignId) public returns (bytes32 requestId) {
-        //TODO understand memory usage here
-        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(HTTP_GET_UINT_JOB_ID), this, this.fulfillCampaignPayout.selector);
-        //req.add("get", append(APPENGINE_ENDPOINT, campaignId));
+        
+        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(BIQUERY_JOB_ID), this, this.fulfillCampaignPayout.selector);
+        req.add("campaignId", campaignId);
         req.add("copyPath", "uniqueVisitors");
         req.addInt("times", 1);
         requestId = sendChainlinkRequest(req, ORACLE_PAYMENT);
-
+        
         //persist the fact that this request was made for the given campaignId so fulfillment knows what campaign to validate.
         payoutRequests[requestId] = campaignId;
         
-        //TODO emit
     }
 
     /**
     ** Callback function for the Oracles when the amount of unique visitors have been retrieved
+    ** 
     ** Rely on recordChainlinkFulfillment Modifier to ensure that the caller and requestId are valid
     **
     ** Param _requestId the chainlink request
@@ -184,6 +179,7 @@ contract MarketingROI is ChainlinkClient, Ownable {
     ** Allows the campaign owner to get back the ETH in case deadline for marketing agency exceeded
     **
     ** Param _campaignId the campaign Id for which to request payout for
+    ** 
     ** Due to requires, txn will fail if conditions not met hence the warnings in Remix. e.g. if not yet expired.
     **
     **/
@@ -227,11 +223,5 @@ contract MarketingROI is ChainlinkClient, Ownable {
         assembly {// solhint-disable-line no-inline-assembly
             result := mload(add(source, 32))
         }
-    }
-
-    function append(string a, string b) internal pure returns (string) {
-
-        return string(abi.encodePacked(a, b));
-
     }
 }
