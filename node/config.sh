@@ -12,7 +12,8 @@ LINK_CONTRACT_ADDRESS=0x20fe562d797a42dcb3399062ae9546cd06f63280
 CHAINLINK_TLS_PORT=0
 SECURE_COOKIES=false
 ALLOW_ORIGINS=*
-ETH_URL=wss://cl-ropsten.fiews.io/v1/API-KEY-REDACTED-FILL-HERE" > ~/.chainlink-ropsten/.env
+ORACLE_CONTRACT_ADDRESS=0x65d1d8f064326ce10ae3ffb57454a48a4e8cba7f
+ETH_URL=wss://cl-ropsten.fiews.io/v1/API_KEY_GOES_HERE" > ~/.chainlink-ropsten/.env
 
 cd ~/.chainlink-ropsten
 
