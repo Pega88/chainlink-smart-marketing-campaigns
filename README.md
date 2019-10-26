@@ -12,7 +12,7 @@ This motivated the marketing agency to deliver high quality campaigns, as well a
 Marketing agencies delivering quality campaigns will therefore thrive, and they will be paid out in accordance with the initial agreements, rather than having to wait months on outstanding invoices for a badly paying customer.
 
 
-#Future work
+# Future work
 Currently the Custom Adapter is linked to my own BigQuery dataset for the website of my company (https://fourcast.io), because that's the Google Analytics and BigQuery data I had access to. When put into production, every customer will have its own BigQuery datasets which should be reflected in the Bridge and Smart Contract.
 
 At this moment I deployed the Google Cloud Function that serves as the Custom Adapter on the same Google Cloud Project as where the BigQuery dataset resides. The result is that the default Service Account used by Cloud Functions has the rights to read the dataset (as it's not public). Other nodes deploying this bridge should communicate their Google Cloud Platform Service Account which needs to be given access to read data from the same BigQuery dataset.
