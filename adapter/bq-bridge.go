@@ -13,7 +13,7 @@ type BigQueryVisitors struct{}
 
 // Run is the bridge.Bridge Run implementation that returns the price response
 func (cc *BigQueryVisitors) Run(h *bridges.Helper) (interface{}, error) {
-	visitors, err := getNumUniqueVisitors()
+	visitors, err := getNumUniqueVisitors(h.GetParam("campaignId"))
 	r := map[string]interface{}{"uniqueVitors": visitors}
 	return r, err
 }
