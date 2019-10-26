@@ -1,8 +1,38 @@
 {
   "initiators": [
-    { "type": "web" }
+    {
+      "type": "runlog",
+      "params": {
+        "address": "0x65d1d8f064326ce10ae3ffb57454a48a4e8cba7f"
+      }
+    }
   ],
   "tasks": [
-    { "type": "bq-marketing" }
-  ]
+    {
+      "type": "bigqueryadapter",
+      "confirmations": null,
+      "params": {
+      }
+    },
+    {
+      "type": "copy",
+      "confirmations": null,
+      "params": {
+      }
+    },
+    {
+      "type": "ethuint256",
+      "confirmations": null,
+      "params": {
+      }
+    },
+    {
+      "type": "ethtx",
+      "confirmations": null,
+      "params": {
+      }
+    }
+  ],
+  "startAt": null,
+  "endAt": null
 }

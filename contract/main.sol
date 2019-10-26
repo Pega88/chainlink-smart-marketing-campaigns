@@ -12,7 +12,7 @@ import "https://github.com/smartcontractkit/chainlink/evm/contracts/vendor/Ownab
 //TODO multiple oracles --> https://github.com/smartcontractkit/chainlink/blob/master/evm/contracts/Aggregator.sol
 contract MarketingROI is ChainlinkClient, Ownable {
     uint256 constant private ORACLE_PAYMENT = 1 * LINK;
-    string constant APPENGINE_ENDPOINT = "https://chainlink-marketing-roi.appspot.com/?campaignId=";
+    //string constant APPENGINE_ENDPOINT = "https://chainlink-marketing-roi.appspot.com/?campaignId=";
 
     //TODO pass oracle + jobId as param instead of hardcoded
 
@@ -123,8 +123,8 @@ contract MarketingROI is ChainlinkClient, Ownable {
     function requestCampaignPayout(string campaignId) public returns (bytes32 requestId) {
         //TODO understand memory usage here
         Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(HTTP_GET_UINT_JOB_ID), this, this.fulfillCampaignPayout.selector);
-        req.add("get", append(APPENGINE_ENDPOINT, campaignId));
-        req.add("path", "uniqueVisitors");
+        //req.add("get", append(APPENGINE_ENDPOINT, campaignId));
+        req.add("copyPath", "uniqueVisitors");
         req.addInt("times", 1);
         requestId = sendChainlinkRequest(req, ORACLE_PAYMENT);
 
