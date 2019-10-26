@@ -25,7 +25,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 // Opts is the bridge.Bridge implementation
 func (cc *BigQueryVisitors) Opts() *bridges.Opts {
 	return &bridges.Opts{
-		Name: "CryptoCompare",
+		Name: "BigQueryVisitors",
 	}
 }
 
