@@ -1,33 +1,31 @@
 package bq
 
 import (
-	"github.com/linkpoolio/bridges"
 	"cloud.google.com/go/bigquery"
 	"context"
+	"github.com/linkpoolio/bridges"
 	"google.golang.org/api/iterator"
 	"log"
 	"net/http"
 )
 
-// CryptoCompare is the most basic Bridge implementation, as it only calls the api:
-// https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD,JPY,EUR
-type CryptoCompare struct{}
+type BigQueryVisitors struct{}
 
 // Run is the bridge.Bridge Run implementation that returns the price response
-func (cc *CryptoCompare) Run(h *bridges.Helper) (interface{}, error) {
-	visitors := getNumUniqueVisitors();
-	r := ud := map[string]interface{}{"uniqueVitors": visitors}
+func (cc *BigQueryVisitors) Run(h *bridges.Helper) (interface{}, error) {
+	visitors, err := getNumUniqueVisitors()
+	r := map[string]interface{}{"uniqueVitors": visitors}
 	return r, err
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	bridges.NewServer(&CryptoCompare{}).Handler(w, r)
+	bridges.NewServer(&BigQueryVisitors{}).Handler(w, r)
 }
 
 // Opts is the bridge.Bridge implementation
-func (cc *CryptoCompare) Opts() *bridges.Opts {
+func (cc *BigQueryVisitors) Opts() *bridges.Opts {
 	return &bridges.Opts{
-		Name:   "CryptoCompare",
+		Name: "CryptoCompare",
 	}
 }
 
@@ -35,12 +33,12 @@ type Visitors struct {
 	Visitors int64 `bigquery:"visitors"`
 }
 
-func getNumUniqueVisitors() int64 {
+func getNumUniqueVisitors(campaignId string) (int64, error) {
 	ctx := context.Background()
-	client, err := bigquery.NewClient(ctx, proj)
+	client, err := bigquery.NewClient(ctx, "chainlink-marketing-roi")
 	if err != nil {
 		log.Fatal(err)
-		return -1;
+		return -1, err
 	}
 	query := client.Query(
 		`
@@ -49,7 +47,9 @@ func getNumUniqueVisitors() int64 {
     	FROM` +
 			"`chainlink-marketing-roi.ga_export.ga_stream`" +
 			`WHERE
-    	trafficsource_source = "chainlink_campaign";`)
+    	trafficsource_source =` +
+			campaignId +
+			`;`)
 
 	iter, read_error := query.Read(ctx)
 	if read_error != nil {
@@ -59,13 +59,13 @@ func getNumUniqueVisitors() int64 {
 		var row Visitors
 		iterError := iter.Next(&row)
 		if iterError == iterator.Done {
-			return 0
+			return -1, iterError
 		}
 		if iterError != nil {
 			log.Fatal(iterError)
-			return -1
+			return -1, iterError
 		}
-		log.Info("unique visitors: %d", row.Visitors)
-		return row.Visitors
+		log.Print("unique visitors: %d", row.Visitors)
+		return row.Visitors, nil
 	}
 }
