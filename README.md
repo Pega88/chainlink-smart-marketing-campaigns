@@ -11,10 +11,16 @@ This motivated the marketing agency to deliver high quality campaigns, as well a
 
 Marketing agencies delivering quality campaigns will therefore thrive, and they will be paid out in accordance with the initial agreements, rather than having to wait months on outstanding invoices for a badly paying customer.
 
+# Demo
+
+[![Demonstration of concept](https://img.youtube.com/vi/iKxMRBbYoss/0.jpg)](https://www.youtube.com/watch?v=iKxMRBbYoss)
+The above video demonstrates the basic usage of the Smart Contract as well as the deployed Custom Adapter.
 
 # Future work
-Currently the Custom Adapter is linked to my own BigQuery dataset for the website of my company (https://fourcast.io), because that's the Google Analytics and BigQuery data I had access to. When put into production, every customer will have its own BigQuery datasets which should be reflected in the Bridge and Smart Contract.
+**Multiple websites** Currently the Custom Adapter is linked to my own BigQuery dataset for the website of my company (https://fourcast.io), because that's the Google Analytics and BigQuery data I had access to. When put into production, every customer will have its own BigQuery datasets which should be reflected in the Bridge and Smart Contract. For **security** this is an ideal scenario. Having only access to a view limits the options and makes it impossible for any SQL-injection-like operation to modify any data (there's only view access, no write access). 
 
-At this moment I deployed the Google Cloud Function that serves as the Custom Adapter on the same Google Cloud Project as where the BigQuery dataset resides. The result is that the default Service Account used by Cloud Functions has the rights to read the dataset (as it's not public). Other nodes deploying this bridge should communicate their Google Cloud Platform Service Account which needs to be given access to read data from the same BigQuery dataset.
+**Integration** For the scope of the hackathon, the decision was made to work as low level as possible to show full understanding and impact of the solution. There is currently no frontend and no unit tests on the Smart Contract itself (combination of priorities on the End-to-End flow + limited experience of NodeJS / Javascript). Depending on priorities I might expand further on creating a web front-end to for enterprises to actually make use of this hackathon submission, which should be seen as a POC/MVP of the concept.
 
-When more Nodes deploy the adapter, the Smart Contract should be adapted to reflect multiple oracles and use an aggregation as per https://github.com/smartcontractkit/chainlink/blob/master/evm/contracts/Aggregator.sol to aggergate results. Due to the fact of having a custom adapter, focus was not on setting up multiple oracles and chainlink nodes but rather on making the solution work End-to-End.
+**Access Management** At this moment I deployed the Google Cloud Function that serves as the Custom Adapter on the same Google Cloud Project as where the BigQuery dataset resides. The result is that the default Service Account used by Cloud Functions has the rights to read the dataset (as it's not public). Other nodes deploying this bridge should communicate their Google Cloud Platform Service Account which needs to be given access to read data from the same BigQuery dataset.
+
+**Aggregation** When more Nodes deploy the adapter, the Smart Contract should be adapted to reflect multiple oracles and use an aggregation as per https://github.com/smartcontractkit/chainlink/blob/master/evm/contracts/Aggregator.sol to aggergate results. Due to the fact of having a custom adapter, focus was not on setting up multiple oracles and chainlink nodes but rather on making the solution work End-to-End.
