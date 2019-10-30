@@ -1,7 +1,15 @@
 # Concept
-Marketing agencies have the difficult task of proving their ROI, making it hard for companies to invest in such campaigns. Companies want to be protected from spending money on a marketing campaign that does not deliver, as well as a marketing agency wants to get paid when certain criteria are met. One of these criteria that both parties could agree on, is the amount of new/unique visitors that landed on the website thanks to the marketing campaign (called clickthrough rate). A smart contract has been created that will payout the marketing agency once an agreed upon # unique visitors have visited the website within a timeframe.
+**Introduction**
 
-Google Analytics data is streamed into Google BigQuery as a native feature of Google Analytics 360. This is data on hit-level (user click) so this dataset is both massive in size as well as it is valuable. The power of Google BigQuery is that it can scan TB or PB of data in just seconds. A SQL query can thus be run on this dataset to query the amount of visitors that reached visited the website. Marketing campaigns use a GET parameter, `utm_source` to attribute the visit to the campaign from where the user clicked through (e.g. Advertisement, email campaign). All hyperlinks for a campaign contain this parameter. Querying for unique visitors while filtering on a specific `utm_source` shows us how many users have visited the site as a consequence of the marketing campaign. This metric is often used to show the ROI (Return on Investment) for a specific marketing campaign and to monitor its success. 
+Marketing agencies have the difficult task of proving their ROI, making it hard for companies to invest in such campaigns. Companies want to be protected from spending money on a marketing campaign that does not deliver, as well as a marketing agency wants to get paid when certain criteria are met. One of these criteria that both parties could agree on, is the amount of new/unique visitors that landed on the website thanks to the marketing campaign (called clickthrough rate).
+
+In the scope of the Virtual Chainlink Hackathon, a smart contract has been created that will payout the marketing agency once an agreed upon # unique visitors have visited the website within a timeframe. Agencies have the option to be rewarded with partial payouts for intermediate targets and the customers can recover the outstanding amount when the target has not been reached on the agreed upon deadline.
+
+**The Basics**
+
+Google Analytics data is streamed into Google BigQuery as a native feature of Google Analytics 360. This is data on hit-level (user click) so this dataset is both massive in size as well as it is valuable. The power of Google BigQuery is that it can scan TB or PB of data in just seconds. A SQL query can thus be run on this dataset to query the amount of visitors that reached visited the website.
+
+Marketing campaigns often use an HTTP GET parameter, for example `utm_source`, to attribute the visit to the campaign from where the user clicked through (e.g. Advertisement, email campaign). All hyperlinks for a campaign contain this parameter. Querying for unique visitors while filtering on a specific `utm_source` shows us how many users have visited the site as a consequence of the marketing campaign. This metric is often used to show the ROI (Return on Investment) for a specific marketing campaign and to monitor its success. 
 
 Thanks to this hackathon submission, actual performance payouts can now be linked to the amount if unique visitors rather than the metric only being used in campaign reporting. Customers that want to hire a marketing agency can register their campaign with this Smart Contract and set the payment terms. Some of these parameters are the amount to be paid, the agency to be paid and the amount of visitors required for a payout to happen. More details can be found in the `contract` section.
 
@@ -22,6 +30,10 @@ The above video demonstrates the basic usage of the Smart Contract as well as th
 **Multiple websites**
 
 Currently the Custom Adapter is linked to my own BigQuery dataset for the website of my company (https://fourcast.io), because that's the Google Analytics and BigQuery data I had access to. When put into production, every customer will have its own BigQuery datasets which should be reflected in the Bridge and Smart Contract. For **security** this is an ideal scenario. Having only access to a view limits the options and makes it impossible for any SQL-injection-like operation to modify any data (there's only view access, no write access). 
+
+**Better validation**
+
+Currently, anyone can trigger new visits as shown in the demo video, by opening new requests to the website. This is problem domain in itself and many solutions exist to filter out these fraudulent visits, which could allow fake traffic to attribute as real traffic. One of the simplest solutions would be to conduct campaigns that focus on new user registrations, in which case a unique client id can be added as a [custom dimension](https://support.google.com/analytics/answer/2709829?hl=en) only on pages that are accessible for logged in users. This is a simplification of a solution and is a broad topic of discussion in the marketing & ad:tech ecosystem.
 
 **Integration**
 
