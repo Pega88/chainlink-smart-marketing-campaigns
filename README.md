@@ -46,3 +46,7 @@ At this moment I deployed the Google Cloud Function that serves as the Custom Ad
 **Aggregation**
 
 When more Nodes deploy the adapter, the Smart Contract should be adapted to reflect multiple oracles and use an aggregation as per https://github.com/smartcontractkit/chainlink/blob/master/evm/contracts/Aggregator.sol to aggergate results. Due to the fact of having a custom adapter, focus was not on setting up multiple oracles and chainlink nodes but rather on making the solution work End-to-End.
+
+**Automated Payouts**
+
+Using the [Cron Initiator](https://docs.chain.link/docs/initiators#section-cron), the job to validate if a payout of the agency has to be done, could be triggered automatically.
