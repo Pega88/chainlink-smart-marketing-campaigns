@@ -27,6 +27,14 @@ The above video demonstrates the basic usage of the Smart Contract as well as th
 
 # Future work
 
+**Aggregation**
+
+When more Nodes deploy the adapter, the Smart Contract should be adapted to reflect multiple oracles and use an aggregation as per [this example](https://github.com/smartcontractkit/chainlink/blob/master/evm/contracts/Aggregator.sol) to aggergate results. Due to the fact of having a custom adapter, focus was not on setting up multiple oracles and chainlink nodes but rather on making the solution work End-to-End.
+
+**Automated Payouts**
+
+Using the **[Cron Initiator](https://docs.chain.link/docs/initiators#section-cron)**, the job to validate if a payout of the agency has to be done, could be triggered automatically. It would then query the contract for all campaigns that have outstanding balances to be paid, query the target for each campaign and use the external adapter to get the data. The callback in the smart contract would then receive the `campaignId` and number of unique visitors for that campaign, to then decide to perform a (potentially partial) payout. This would allow marketing agencies to focus fully on their campaign and not having to focus on understanding how to call the smart contract.
+
 **Multiple websites**
 
 Currently the Custom Adapter is linked to my own BigQuery dataset for the website of my company (https://fourcast.io), because that's the Google Analytics and BigQuery data I had access to. When put into production, every customer will have its own BigQuery datasets which should be reflected in the Bridge and Smart Contract. For **security** this is an ideal scenario. Having only access to a view limits the options and makes it impossible for any SQL-injection-like operation to modify any data (there's only view access, no write access). 
@@ -42,11 +50,3 @@ For the scope of the hackathon, the decision was made to work as low level as po
 **Access Management**
 
 At this moment I deployed the Google Cloud Function that serves as the Custom Adapter on the same Google Cloud Project as where the BigQuery dataset resides. The result is that the default Service Account used by Cloud Functions has the rights to read the dataset (as it's not public). Other nodes deploying this bridge should communicate their Google Cloud Platform Service Account which needs to be given access to read data from the same BigQuery dataset.
-
-**Aggregation**
-
-When more Nodes deploy the adapter, the Smart Contract should be adapted to reflect multiple oracles and use an aggregation as per https://github.com/smartcontractkit/chainlink/blob/master/evm/contracts/Aggregator.sol to aggergate results. Due to the fact of having a custom adapter, focus was not on setting up multiple oracles and chainlink nodes but rather on making the solution work End-to-End.
-
-**Automated Payouts**
-
-Using the [Cron Initiator](https://docs.chain.link/docs/initiators#section-cron), the job to validate if a payout of the agency has to be done, could be triggered automatically.
