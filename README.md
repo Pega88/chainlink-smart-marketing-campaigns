@@ -1,3 +1,16 @@
+# UPDATE - MULTIPLE ORACLES
+
+An update has been published on the `aggregation` branch that makes use of multiple Oracles. For the sake of consistency with the video that has been published on YouTube, this is not merged into the `master` branch (yet) as that would require a full redo of the demo video.
+
+All aspects of the demo video still hold, with the addition that on the `aggregation` branch, the smart contract waits for responses from multiple oracles before a payout is made. Screenshots can be seen on that branch from a successful response from both oracles as well as when one oracle was interrupted, the smart contract waited for that oracle to come back online (manually started the node again after 7 minutes, hence the time gap between the 2 `ChainlinkFulfilled` events) before submitting the payout.
+
+![proof of multiple nodes](contract/waiting-for-second-node.png)
+
+The contract only submitted the payout to the agency once a second node replied, so the contract is not depending on a single node to provide an answer. This shows the decentralized capabilities of Chainlink.
+
+Currently this is using my 2 nodes that both have my own BigQuery custom adapter, however this is easily parametrizable / extensible for more nodes with a min and max amount of responses required.
+
+
 # Concept
 **Introduction**
 
@@ -26,10 +39,6 @@ Marketing agencies delivering quality campaigns will therefore thrive, and they 
 The above video demonstrates the basic usage of the Smart Contract as well as the deployed Custom Adapter.
 
 # Future work
-
-**Aggregation**
-
-When more Nodes deploy the adapter, the Smart Contract should be adapted to reflect multiple oracles and use an aggregation as per [this example](https://github.com/smartcontractkit/chainlink/blob/master/evm/contracts/Aggregator.sol) to aggergate results. Due to the fact of having a custom adapter, focus was not on setting up multiple oracles and chainlink nodes but rather on making the solution work End-to-End.
 
 **Automated Payouts**
 
