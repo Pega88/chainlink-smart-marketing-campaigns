@@ -1,4 +1,4 @@
-# UPDATE - MULTIPLE ORACLES
+# UPDATE - Multiple Oracles & Result Aggregation
 
 An update has been published on the `aggregation` branch that makes use of multiple Oracles. For the sake of consistency with the video that has been published on YouTube, this is not merged into the `master` branch (yet) as that would require a full redo of the demo video.
 
