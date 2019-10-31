@@ -6,6 +6,11 @@ All aspects of the demo video still hold, with the addition that on the `aggrega
 
 Currently this is using my 2 nodes that both have my own BigQuery custom adapter, however this is easily parametrizable / extensible for more nodes with a min and max amount of responses required.
 
+[See full details on aggregation here](https://github.com/Pega88/chainlink-smart-marketing-campaigns/blob/aggregation/README.md)
+
+![Alt](https://raw.githubusercontent.com/Pega88/chainlink-smart-marketing-campaigns/aggregation/contract/waiting-for-second-node.png)
+
+
 # Concept
 **Introduction**
 
