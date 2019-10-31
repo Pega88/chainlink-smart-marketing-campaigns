@@ -4,9 +4,7 @@ An update has been published on the `aggregation` branch that makes use of multi
 
 All aspects of the demo video still hold, with the addition that on the `aggregation` branch, the smart contract waits for responses from multiple oracles before a payout is made. Screenshots can be seen on that branch from a successful response from both oracles as well as when one oracle was interrupted, the smart contract waited for that oracle to come back online (manually started the node again after 7 minutes, hence the time gap between the 2 `ChainlinkFulfilled` events) before submitting the payout.
 
-Currently this is using my 2 nodes that both have my own BigQuery custom adapter, however this is easily parametrizable / extensible for more nodes with a min and max amount of responses required.
-
-[See full details on aggregation here](https://github.com/Pega88/chainlink-smart-marketing-campaigns/blob/aggregation/README.md)
+[See full details on my result aggregation and usage of multiple oracles here](https://github.com/Pega88/chainlink-smart-marketing-campaigns/tree/aggregation)
 
 ![Alt](https://raw.githubusercontent.com/Pega88/chainlink-smart-marketing-campaigns/aggregation/contract/waiting-for-second-node.png)
 
