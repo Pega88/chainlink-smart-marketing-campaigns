@@ -142,6 +142,8 @@ contract MarketingROI is ChainlinkClient, Ownable {
         
           for (uint i = 0; i < oracles.length; i++) {
               request = buildChainlinkRequest(stringToBytes32(jobIds[i]), this, this.fulfillCampaignPayout.selector);
+              request.add("campaignId", campaignId);
+              request.add("copyPath", "uniqueVisitors");
               requestId = sendChainlinkRequestTo(oracles[i], request, ORACLE_PAYMENT);
               //persist the fact that this request was made for the given campaignId so fulfillment knows what campaign to validate.
               payoutRequests[requestId] = campaignId;
