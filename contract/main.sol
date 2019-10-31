@@ -9,17 +9,23 @@ import "https://github.com/smartcontractkit/chainlink/evm/contracts/vendor/Ownab
 * utilize Ownable helper functions to manage ownership and transfer thereof with the onlyOwner modifier.
 **/
 
-//TODO multiple oracles --> https://github.com/smartcontractkit/chainlink/blob/master/evm/contracts/Aggregator.sol
 contract MarketingROI is ChainlinkClient, Ownable {
+    
     uint256 constant private ORACLE_PAYMENT = 1 * LINK;
 
-    //OWN VALUES
-    //address constant private OWN_CHAINLINK_ORACLE = 0x65d1d8f064326ce10ae3ffb57454a48a4e8cba7f; //self-hosted node with bigquery adapter
-    //string constant private BIQUERY_JOB_ID = "a1582b32d6434bde9111f22e87ed86ec";
-
-    address constant private SECOND_ORACLE = 0x0618a6c7cd3c553d8f7768e22d95572ed08f0a1b; //second hosted oracle contract
-    string constant private SECOND_BIQUERY_JOB_ID = "86f94ea869e3455ab17f2d2d543afd1e";
-
+    //TODO - pass in constructor but for hackathon submission it's easier for judges to use my existing oracles - hence hardcoded
+    
+    //FIRST SELF-HOSTED ORACLE - self-hosted node with bigquery adapter used in job.
+    address constant private MY_CHAINLINK_ORACLE_1 = 0x65d1d8f064326ce10ae3ffb57454a48a4e8cba7f;
+    string constant private BIQUERY_JOB_1 = "a1582b32d6434bde9111f22e87ed86ec";
+    
+    //SECOND SELF-HOSTED ORACLE - self-hosted node with bigquery adapter used in job.
+    address constant private MY_CHAINLINK_ORACLE_2 = 0x0618a6c7cd3c553d8f7768e22d95572ed08f0a1b;
+    string constant private BIQUERY_JOB_2 = "86f94ea869e3455ab17f2d2d543afd1e";
+    
+    string[] public jobIds;
+    address[] public oracles;
+    
     struct Campaign {
         //the unique identified for the campaign
         string campaignId;
@@ -41,6 +47,11 @@ contract MarketingROI is ChainlinkClient, Ownable {
         address client;
         //epoch in seconds of expiry of deadline to reach target - creator can ask refund after this date
         uint256 expiry;
+        //the responses from the different oracles
+        uint256[] responses;
+        //store request ids mapped to which oracle it came from
+        bytes32[] payoutRequestIds;
+        
     }
 
     //maps campaignId to campaign details
@@ -51,7 +62,6 @@ contract MarketingROI is ChainlinkClient, Ownable {
     event CampaignThresholdReached(bytes32 requestId, string campaignid, uint256 visitors,uint256 nextVisitorsTarget);
     event CampaignThresholdNotReached(bytes32 requestId, string campaignid, uint256 visitors,uint256 nextVisitorsTarget);
     event CampaignRegistered(string campaignId,uint256 amount,uint256 visitors,uint256 payoutChunkSize,uint numPayouts);
-    event PrintValues(uint256 uniqueVisitors,uint256 visitorsRequired,uint256 amount, uint256 payoutSize);
     event PaymentMade(address payee,uint256 value);
 
     // Since using my own adapter I hardcode my own oracle here. When setup for production, oracles should be dynamic and result should be aggregated.
@@ -59,7 +69,16 @@ contract MarketingROI is ChainlinkClient, Ownable {
     // a default httpGet jobid on multiple nodes.
     constructor() public Ownable(){
         setPublicChainlinkToken();
-        setChainlinkOracle(SECOND_ORACLE);
+        
+        //easier for testing/judges to validate when using my hardcoded oracles and jobs. Production should have these parameterized + not fixed in size.
+        jobIds = new string[](2);
+        oracles = new address[] (2);
+        
+        oracles[0]= MY_CHAINLINK_ORACLE_1;
+        jobIds[0]= BIQUERY_JOB_1;
+        
+        oracles[1]= MY_CHAINLINK_ORACLE_2;
+        jobIds[1]= BIQUERY_JOB_2;
     }
 
     //retrieve next target for partial payout
@@ -71,10 +90,6 @@ contract MarketingROI is ChainlinkClient, Ownable {
     function registeredVisitors(string _campaignId) public view returns (uint256){
         return campaigns[_campaignId].uniqueVisitors;
     }
-
-
-    //todo pass array of strings of oracles to use and a max number of oracles to use
-    //TODO add timestamp of registration and deadline time
 
     /**
     ** Registers a new campaign
@@ -104,7 +119,9 @@ contract MarketingROI is ChainlinkClient, Ownable {
             0, //the amount of initial visitors for the campaign (will be 0 in bigquery when using new UTM tag)
             _agency, // the agency performing the campaign, that will be paid out.
             msg.sender, // the client paying for the campaign
-            _expiry //epoch seconds when client can ask refund
+            _expiry, //epoch seconds when client can ask refund
+            new uint256[](oracles.length), //start with empty responses
+            new bytes32[](oracles.length) //start with empty request ids
             );
         emit CampaignRegistered(_campaignId,msg.value,_visitorsRequired,msg.value/numPayoutChunks,numPayoutChunks);
     }
@@ -117,17 +134,20 @@ contract MarketingROI is ChainlinkClient, Ownable {
     ** Return the requestId for the oracle request
     **
     **/
-    function requestCampaignPayout(string campaignId) public returns (bytes32 requestId) {
+    function requestCampaignPayout(string campaignId) public {
         
-        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(SECOND_BIQUERY_JOB_ID), this, this.fulfillCampaignPayout.selector);
-        req.add("campaignId", campaignId);
-        req.add("copyPath", "uniqueVisitors");
-        req.addInt("times", 1);
-        requestId = sendChainlinkRequest(req, ORACLE_PAYMENT);
+        Chainlink.Request memory request;
+        bytes32 requestId;
+        Campaign storage c = campaigns[campaignId];
         
-        //persist the fact that this request was made for the given campaignId so fulfillment knows what campaign to validate.
-        payoutRequests[requestId] = campaignId;
-        
+          for (uint i = 0; i < oracles.length; i++) {
+              request = buildChainlinkRequest(stringToBytes32(jobIds[i]), this, this.fulfillCampaignPayout.selector);
+              requestId = sendChainlinkRequestTo(oracles[i], request, ORACLE_PAYMENT);
+              //persist the fact that this request was made for the given campaignId so fulfillment knows what campaign to validate.
+              payoutRequests[requestId] = campaignId;
+              //store the oracle index where this request was sent to know which oracle replied.
+              c.payoutRequestIds[i] = requestId;
+          }
     }
 
     /**
@@ -143,10 +163,25 @@ contract MarketingROI is ChainlinkClient, Ownable {
 
         string storage campaignId = payoutRequests[_requestId];
         Campaign storage c = campaigns[campaignId];
-        c.uniqueVisitors = _uniqueVisitors;
-        
-        emit PrintValues(c.uniqueVisitors,c.visitorsRequired,c.amount,c.payoutSize);
 
+        //store the response for the corresponding oracle - indeces map between jobid, oracle, payoutRequestId and Campaign.responses.
+        for (uint i = 0; i < oracles.length; i++) {
+            if(c.payoutRequestIds[i] == _requestId){
+                c.responses[i] = _uniqueVisitors;
+            }
+        }
+        //check if all responses have been recorded, if so, continue, if not, wait for other fulfillment by returning this function.
+        uint256 cummulResponses = 0;
+        for (uint j = 0; j < c.responses.length; j++) {
+            //there's still an empty response or response was 0, no payout (assuming there's no campaign with target of 0 visitors)
+            if(c.responses[j] == 0) return;
+            cummulResponses += c.responses[j];
+        }
+        
+        //the response we'll use is the average of all node responses.
+         c.uniqueVisitors= cummulResponses / oracles.length;
+        
+        //if we are here, we have a response from all oracles.
         //check if threshold has been reached
         if (c.uniqueVisitors >= c.nextVisitorsTarget) { 
             require(c.amount > 0, "Funds fully paid");
