@@ -14,9 +14,11 @@ contract MarketingROI is ChainlinkClient, Ownable {
     uint256 constant private ORACLE_PAYMENT = 1 * LINK;
 
     //OWN VALUES
-    address constant private OWN_CHAINLINK_ORACLE = 0x65d1d8f064326ce10ae3ffb57454a48a4e8cba7f; //self-hosted node with bigquery adapter
-    string constant private BIQUERY_JOB_ID = "a1582b32d6434bde9111f22e87ed86ec";
+    //address constant private OWN_CHAINLINK_ORACLE = 0x65d1d8f064326ce10ae3ffb57454a48a4e8cba7f; //self-hosted node with bigquery adapter
+    //string constant private BIQUERY_JOB_ID = "a1582b32d6434bde9111f22e87ed86ec";
 
+    address constant private SECOND_ORACLE = 0x0618a6c7cd3c553d8f7768e22d95572ed08f0a1b; //second hosted oracle contract
+    string constant private SECOND_BIQUERY_JOB_ID = "86f94ea869e3455ab17f2d2d543afd1e";
 
     struct Campaign {
         //the unique identified for the campaign
@@ -57,7 +59,7 @@ contract MarketingROI is ChainlinkClient, Ownable {
     // a default httpGet jobid on multiple nodes.
     constructor() public Ownable(){
         setPublicChainlinkToken();
-        setChainlinkOracle(OWN_CHAINLINK_ORACLE);
+        setChainlinkOracle(SECOND_ORACLE);
     }
 
     //retrieve next target for partial payout
@@ -117,7 +119,7 @@ contract MarketingROI is ChainlinkClient, Ownable {
     **/
     function requestCampaignPayout(string campaignId) public returns (bytes32 requestId) {
         
-        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(BIQUERY_JOB_ID), this, this.fulfillCampaignPayout.selector);
+        Chainlink.Request memory req = buildChainlinkRequest(stringToBytes32(SECOND_BIQUERY_JOB_ID), this, this.fulfillCampaignPayout.selector);
         req.add("campaignId", campaignId);
         req.add("copyPath", "uniqueVisitors");
         req.addInt("times", 1);
