@@ -18,7 +18,7 @@ func (cc *BigQueryVisitors) Run(h *bridges.Helper) (interface{}, error) {
 	log.Print("campaignId from request:",campaignId)
 	visitors, err := getNumUniqueVisitors(campaignId)
 	log.Print("returned vistors to bridge Run: ",visitors)
-	r := map[string]interface{}{"uniqueVitors": visitors}
+	r := map[string]interface{}{"uniqueVisitors": visitors}
 	return r, err
 }
 
